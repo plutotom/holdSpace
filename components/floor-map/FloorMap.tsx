@@ -5,6 +5,8 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { RoomCard } from "./RoomCard";
 import { RoomDetailPanel } from "./RoomDetailPanel";
+import { FloorMapCanvas } from "./FloorMapCanvas";
+import { DEFAULT_ASPECT_RATIO, DEFAULT_BACKGROUND_OPACITY } from "@/lib/floor-plan/geometry";
 import type { Id } from "@/convex/_generated/dataModel";
 
 interface FloorMapProps {
@@ -22,6 +24,7 @@ const LEGEND = [
 export function FloorMap({ floorId, organizationId }: FloorMapProps) {
   const [selectedRoomId, setSelectedRoomId] = useState<Id<"rooms"> | null>(null);
 
+  const floor = useQuery(api.routes.floors.get, { floorId });
   const rooms = useQuery(api.routes.rooms.getRoomsWithStatus, {
     floorId,
     organizationId,
@@ -31,24 +34,24 @@ export function FloorMap({ floorId, organizationId }: FloorMapProps) {
 
   return (
     <div className="flex-1 flex overflow-hidden">
-      {/* Map canvas */}
       <div className="flex-1 p-4 overflow-auto flex flex-col">
-        {/* 3:2 aspect ratio container */}
-        <div className="relative w-full rounded-lg border border-border bg-muted/20" style={{ paddingTop: "66.67%" }}>
-          <div className="absolute inset-0 p-1">
-            {rooms?.map((room) => (
-              <RoomCard
-                key={room._id}
-                room={room}
-                isSelected={room._id === selectedRoomId}
-                onClick={() =>
-                  setSelectedRoomId(room._id === selectedRoomId ? null : room._id)
-                }
-              />
-            ))}
-          </div>
-        </div>
-        {/* Legend */}
+        <FloorMapCanvas
+          aspectRatio={floor?.canvasAspectRatio ?? DEFAULT_ASPECT_RATIO}
+          backgroundUrl={floor?.backgroundUrl}
+          backgroundOpacity={floor?.backgroundOpacity ?? DEFAULT_BACKGROUND_OPACITY}
+        >
+          {rooms?.map((room) => (
+            <RoomCard
+              key={room._id}
+              room={room}
+              isSelected={room._id === selectedRoomId}
+              onClick={() =>
+                setSelectedRoomId(room._id === selectedRoomId ? null : room._id)
+              }
+            />
+          ))}
+        </FloorMapCanvas>
+
         <div className="flex items-center gap-5 mt-3">
           {LEGEND.map(({ dot, label }) => (
             <div key={label} className="flex items-center gap-1.5">
@@ -59,7 +62,6 @@ export function FloorMap({ floorId, organizationId }: FloorMapProps) {
         </div>
       </div>
 
-      {/* Detail panel */}
       {selectedRoom && (
         <RoomDetailPanel
           room={selectedRoom}

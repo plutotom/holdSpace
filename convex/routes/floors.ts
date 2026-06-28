@@ -11,6 +11,21 @@ export const list = query({
   },
 });
 
+export const get = query({
+  args: { floorId: v.id("floors") },
+  handler: async (ctx, { floorId }) => {
+    const floor = await ctx.db.get(floorId);
+    if (!floor) return null;
+
+    let backgroundUrl: string | null = null;
+    if (floor.backgroundStorageId) {
+      backgroundUrl = await ctx.storage.getUrl(floor.backgroundStorageId);
+    }
+
+    return { ...floor, backgroundUrl };
+  },
+});
+
 export const create = mutation({
   args: {
     organizationId: v.id("organizations"),
@@ -19,7 +34,12 @@ export const create = mutation({
     order: v.number(),
   },
   handler: async (ctx, args) => {
-    return await ctx.db.insert("floors", args);
+    return await ctx.db.insert("floors", {
+      ...args,
+      layoutMode: "visual",
+      backgroundOpacity: 0.45,
+      canvasAspectRatio: 1.5,
+    });
   },
 });
 
@@ -34,14 +54,68 @@ export const update = mutation({
   },
 });
 
+export const updateLayout = mutation({
+  args: {
+    floorId: v.id("floors"),
+    backgroundStorageId: v.optional(v.union(v.id("_storage"), v.null())),
+    backgroundOpacity: v.optional(v.number()),
+    canvasAspectRatio: v.optional(v.number()),
+    layoutMode: v.optional(v.union(v.literal("list"), v.literal("visual"))),
+  },
+  handler: async (ctx, { floorId, backgroundStorageId, ...updates }) => {
+    if (backgroundStorageId === null) {
+      const floor = await ctx.db.get(floorId);
+      if (floor?.backgroundStorageId) {
+        await ctx.storage.delete(floor.backgroundStorageId);
+      }
+      await ctx.db.patch(floorId, {
+        ...updates,
+        backgroundStorageId: undefined,
+      });
+      return;
+    }
+
+    if (backgroundStorageId !== undefined) {
+      const floor = await ctx.db.get(floorId);
+      if (
+        floor?.backgroundStorageId &&
+        floor.backgroundStorageId !== backgroundStorageId
+      ) {
+        await ctx.storage.delete(floor.backgroundStorageId);
+      }
+    }
+
+    const patch: Record<string, unknown> = { ...updates };
+    if (backgroundStorageId !== undefined) {
+      patch.backgroundStorageId = backgroundStorageId;
+    }
+    await ctx.db.patch(floorId, patch);
+  },
+});
+
+export const generateBackgroundUploadUrl = mutation({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
 export const remove = mutation({
   args: { floorId: v.id("floors") },
   handler: async (ctx, { floorId }) => {
+    const floor = await ctx.db.get(floorId);
+    if (!floor) return;
+
     const rooms = await ctx.db
       .query("rooms")
       .withIndex("by_floor", (q) => q.eq("floorId", floorId))
       .collect();
     await Promise.all(rooms.map((r) => ctx.db.delete(r._id)));
+
+    if (floor.backgroundStorageId) {
+      await ctx.storage.delete(floor.backgroundStorageId);
+    }
+
     await ctx.db.delete(floorId);
   },
 });

@@ -33,7 +33,7 @@ CLERK_JWT_ISSUER_DOMAIN = <issuer URL from Clerk>
 
 ### 5. Run
 ```bash
-npm run dev       # Next.js on :3000
+pnpm dev          # Next.js on :4020
 npx convex dev    # Convex (separate terminal)
 ```
 

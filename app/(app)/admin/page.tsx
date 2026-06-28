@@ -64,7 +64,7 @@ export default function AdminPage() {
                   href={`/admin/floors/${floor._id}`}
                   className="text-sm text-muted-foreground hover:text-foreground underline"
                 >
-                  Manage rooms
+                  Edit floor plan
                 </Link>
               </div>
             ))}

@@ -17,6 +17,12 @@ export default defineSchema({
     name: v.string(),
     level: v.number(),
     order: v.number(),
+    layoutMode: v.optional(
+      v.union(v.literal("list"), v.literal("visual"))
+    ),
+    backgroundStorageId: v.optional(v.id("_storage")),
+    backgroundOpacity: v.optional(v.number()),
+    canvasAspectRatio: v.optional(v.number()),
   })
     .index("by_organization", ["organizationId"])
     .index("by_org_and_level", ["organizationId", "level"]),
@@ -36,6 +42,7 @@ export default defineSchema({
     yPercent: v.number(),
     widthPercent: v.number(),
     heightPercent: v.number(),
+    sortOrder: v.optional(v.number()),
     defaultDuration: v.optional(v.number()),
     adHocReleaseMinutes: v.optional(v.number()),
     description: v.optional(v.string()),
