@@ -5,6 +5,7 @@ import { useMutation, useQuery } from "convex/react";
 import { useUser, useOrganization } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
 import { formatDuration } from "@/lib/utils";
+import { formatConvexError } from "@/lib/convex-error";
 import type { Id } from "@/convex/_generated/dataModel";
 
 interface AdHocClaimButtonProps {
@@ -43,7 +44,7 @@ export function AdHocClaimButton({
       });
       setClaimed(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to claim room");
+      setError(formatConvexError(e));
     } finally {
       setLoading(false);
     }

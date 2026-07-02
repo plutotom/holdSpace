@@ -72,6 +72,21 @@ export default function AdminPage() {
         </section>
       )}
 
+      <section className="mb-8">
+        <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">
+          Integrations
+        </h2>
+        <Link
+          href="/admin/integrations"
+          className="block border border-border rounded-lg p-4 hover:bg-accent transition-colors"
+        >
+          <p className="text-sm font-medium">Google Calendar</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Connect and sync room calendars
+          </p>
+        </Link>
+      </section>
+
       <section>
         <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">
           Team
@@ -80,8 +95,8 @@ export default function AdminPage() {
           href="/admin/users"
           className="block border border-border rounded-lg p-4 hover:bg-accent transition-colors"
         >
-          <p className="text-sm font-medium">Manage therapists</p>
-          <p className="text-xs text-muted-foreground mt-0.5">View roles, set admin access</p>
+          <p className="text-sm font-medium">Manage team</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Invite members, manage roles</p>
         </Link>
       </section>
     </div>

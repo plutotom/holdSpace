@@ -3,8 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 4020",
     "build": "next build",
+    "dev": "convex dev --start 'next dev -p 4020'",
+    "dev:web": "next dev -p 4020",
+    "dev:backend": "convex dev",
     "start": "next start",
     "lint": "next lint",
     "convex:dev": "convex dev",

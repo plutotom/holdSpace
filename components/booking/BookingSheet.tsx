@@ -5,6 +5,7 @@ import { useMutation, useQuery } from "convex/react";
 import { useUser } from "@clerk/nextjs";
 import { X } from "lucide-react";
 import { api } from "@/convex/_generated/api";
+import { formatConvexError } from "@/lib/convex-error";
 import type { Id } from "@/convex/_generated/dataModel";
 
 const DURATION_OPTIONS = [50, 60, 90];
@@ -66,7 +67,7 @@ export function BookingSheet({
         onClose();
       }, 1000);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Booking failed");
+      setError(formatConvexError(e));
     } finally {
       setLoading(false);
     }

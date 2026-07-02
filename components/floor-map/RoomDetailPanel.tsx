@@ -2,17 +2,23 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { BookingSheet } from "@/components/booking/BookingSheet";
 import { AdHocClaimButton } from "@/components/booking/AdHocClaimButton";
 import { formatTime, roomStatusConfig, type RoomStatus } from "@/lib/utils";
+import { formatConvexError } from "@/lib/convex-error";
+import { canFreeRoom } from "@/lib/can-free-room";
+import { useConvexUser } from "@/lib/use-convex-user";
 import type { Id } from "@/convex/_generated/dataModel";
 
 interface ActiveReservation {
+  _id: Id<"reservations">;
+  userId: Id<"users">;
   startTime: number;
   endTime: number;
   userName: string;
+  status: string;
 }
 
 interface Room {
@@ -31,10 +37,19 @@ interface RoomDetailPanelProps {
   onClose: () => void;
 }
 
-export function RoomDetailPanel({ room, organizationId, onClose }: RoomDetailPanelProps) {
+export function RoomDetailPanel({
+  room,
+  organizationId,
+  onClose,
+}: RoomDetailPanelProps) {
   const [bookingOpen, setBookingOpen] = useState(false);
+  const [freeing, setFreeing] = useState(false);
+  const [freeError, setFreeError] = useState<string | null>(null);
+  const freeRoom = useMutation(api.routes.reservations.freeRoom);
+  const { convexUser } = useConvexUser(organizationId);
   const config = roomStatusConfig[room.status];
   const today = new Date().toISOString().split("T")[0];
+  const showFreeRoom = canFreeRoom(convexUser, room.activeReservation);
 
   const schedule = useQuery(api.routes.reservations.getSchedule, {
     roomId: room._id,
@@ -77,6 +92,33 @@ export function RoomDetailPanel({ room, organizationId, onClose }: RoomDetailPan
               {" – "}
               {formatTime(room.activeReservation.endTime)}
             </p>
+            {showFreeRoom && (
+                <button
+                  disabled={freeing || !convexUser}
+                  onClick={async () => {
+                    if (!convexUser) return;
+                    if (!confirm("Free this room? The reservation will be canceled.")) return;
+                    setFreeing(true);
+                    setFreeError(null);
+                    try {
+                      await freeRoom({
+                        reservationId: room.activeReservation!._id,
+                        actingUserId: convexUser._id,
+                      });
+                    } catch (e) {
+                      setFreeError(formatConvexError(e));
+                    } finally {
+                      setFreeing(false);
+                    }
+                  }}
+                  className="mt-2 w-full py-1.5 px-2 border border-red-300 dark:border-red-700 rounded text-xs font-medium text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900 disabled:opacity-50"
+                >
+                  {freeing ? "Freeing…" : "Free this room"}
+                </button>
+              )}
+            {freeError && (
+              <p className="text-xs text-destructive mt-1.5">{freeError}</p>
+            )}
           </div>
         )}
 

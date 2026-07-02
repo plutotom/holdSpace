@@ -4,20 +4,23 @@ import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
 import Link from "next/link";
-import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
+import { OrganizationSwitcher, UserButton, useOrganization } from "@clerk/nextjs";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useIsOrgAdmin } from "@/lib/use-is-org-admin";
 
-const NAV = [
-  { label: "Floor Map", href: "/floor" },
-  { label: "Admin", href: "/admin" },
-];
+const NAV = [{ label: "Floor Map", href: "/floor" }];
 
 export function Header() {
   const { theme, setTheme } = useTheme();
   const pathname = usePathname();
+  const { organization } = useOrganization();
+  const { isLoaded, isOrgAdmin, isSuperuser } = useIsOrgAdmin();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  const nav =
+    isLoaded && isOrgAdmin ? [...NAV, { label: "Admin", href: "/admin" }] : NAV;
 
   return (
     <header className="h-14 border-b border-border flex items-center px-4 gap-4 bg-background flex-shrink-0">
@@ -25,7 +28,7 @@ export function Header() {
         HoldSpace
       </Link>
       <nav className="flex items-center gap-0.5 flex-1">
-        {NAV.map(({ label, href }) => (
+        {nav.map(({ label, href }) => (
           <Link
             key={href}
             href={href}
@@ -50,7 +53,15 @@ export function Header() {
             {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
         )}
-        <OrganizationSwitcher hidePersonal afterSelectOrganizationUrl="/floor" />
+        {isSuperuser ? (
+          <OrganizationSwitcher hidePersonal afterSelectOrganizationUrl="/floor" />
+        ) : (
+          organization && (
+            <span className="text-sm text-muted-foreground hidden sm:inline">
+              {organization.name}
+            </span>
+          )
+        )}
         <UserButton />
       </div>
     </header>

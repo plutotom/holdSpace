@@ -8,7 +8,14 @@
  * @module
  */
 
+import type * as crons from "../crons.js";
+import type * as lib_auth from "../lib/auth.js";
+import type * as lib_encryption from "../lib/encryption.js";
+import type * as lib_googleApi from "../lib/googleApi.js";
 import type * as routes_floors from "../routes/floors.js";
+import type * as routes_google from "../routes/google.js";
+import type * as routes_googleInternal from "../routes/googleInternal.js";
+import type * as routes_googlePublic from "../routes/googlePublic.js";
 import type * as routes_organizations from "../routes/organizations.js";
 import type * as routes_reservations from "../routes/reservations.js";
 import type * as routes_rooms from "../routes/rooms.js";
@@ -22,7 +29,14 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  crons: typeof crons;
+  "lib/auth": typeof lib_auth;
+  "lib/encryption": typeof lib_encryption;
+  "lib/googleApi": typeof lib_googleApi;
   "routes/floors": typeof routes_floors;
+  "routes/google": typeof routes_google;
+  "routes/googleInternal": typeof routes_googleInternal;
+  "routes/googlePublic": typeof routes_googlePublic;
   "routes/organizations": typeof routes_organizations;
   "routes/reservations": typeof routes_reservations;
   "routes/rooms": typeof routes_rooms;

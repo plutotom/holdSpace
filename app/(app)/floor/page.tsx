@@ -6,10 +6,12 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { FloorMap } from "@/components/floor-map/FloorMap";
 import { FloorTabs } from "@/components/floor-map/FloorTabs";
+import { useIsOrgAdmin } from "@/lib/use-is-org-admin";
 import type { Id } from "@/convex/_generated/dataModel";
 
 export default function FloorPage() {
   const { organization } = useOrganization();
+  const { isLoaded: adminLoaded, isOrgAdmin } = useIsOrgAdmin();
   const [selectedFloorId, setSelectedFloorId] = useState<Id<"floors"> | null>(null);
 
   const org = useQuery(
@@ -39,7 +41,9 @@ export default function FloorPage() {
     return (
       <div className="flex-1 flex flex-col items-center justify-center gap-3 text-muted-foreground">
         <p className="text-sm">No organization found.</p>
-        <p className="text-xs">Make sure you\'re signed in to an org via the switcher above.</p>
+        <a href="/onboarding" className="text-sm underline hover:text-foreground">
+          Set up your practice →
+        </a>
       </div>
     );
   }
@@ -48,9 +52,13 @@ export default function FloorPage() {
     return (
       <div className="flex-1 flex flex-col items-center justify-center gap-3 text-muted-foreground">
         <p className="text-sm">No floors configured yet.</p>
-        <a href="/admin" className="text-sm underline hover:text-foreground">
-          Set up your practice in Admin →
-        </a>
+        {adminLoaded && isOrgAdmin ? (
+          <a href="/admin" className="text-sm underline hover:text-foreground">
+            Set up your practice in Admin →
+          </a>
+        ) : (
+          <p className="text-xs">Ask your practice admin to configure floors.</p>
+        )}
       </div>
     );
   }

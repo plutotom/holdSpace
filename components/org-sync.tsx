@@ -4,10 +4,11 @@ import { useEffect, useRef } from "react";
 import { useOrganization, useUser } from "@clerk/nextjs";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { clerkOrgRoleToAppRole } from "@/lib/roles";
 
-// Silently syncs Clerk org + user into Convex on mount / org change.
+// Syncs Clerk org + user into Convex on mount / org change.
 export function OrgSync() {
-  const { organization } = useOrganization();
+  const { organization, membership } = useOrganization();
   const { user } = useUser();
   const createOrg = useMutation(api.routes.organizations.createOrganization);
   const upsertUser = useMutation(api.routes.users.upsert);
@@ -15,7 +16,7 @@ export function OrgSync() {
 
   useEffect(() => {
     if (!organization || !user) return;
-    const key = `${organization.id}:${user.id}`;
+    const key = `${organization.id}:${user.id}:${membership?.role ?? ""}`;
     if (syncedRef.current === key) return;
     syncedRef.current = key;
 
@@ -30,11 +31,11 @@ export function OrgSync() {
         organizationId: orgId,
         clerkUserId: user.id,
         email: user.primaryEmailAddress?.emailAddress ?? "",
-        name: user.fullName ?? user.username ?? "Therapist",
-        role: "therapist",
+        name: user.fullName ?? user.username ?? "Member",
+        role: clerkOrgRoleToAppRole(membership?.role),
       });
     })();
-  }, [organization?.id, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [organization?.id, user?.id, membership?.role, createOrg, upsertUser, organization, user, membership]);
 
   return null;
 }

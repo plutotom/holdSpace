@@ -8,9 +8,18 @@ export default defineSchema({
     slug: v.string(),
     defaultSessionDurations: v.array(v.number()),
     adHocReleaseMinutes: v.number(),
+    googleCalendarConnected: v.optional(v.boolean()),
+    googleRefreshToken: v.optional(v.string()),
+    googleTokenExpiresAt: v.optional(v.number()),
+    googleConnectedEmail: v.optional(v.string()),
+    googleCalendarId: v.optional(v.string()),
+    googleWatchChannelId: v.optional(v.string()),
+    googleWatchResourceId: v.optional(v.string()),
+    googleWatchExpiresAt: v.optional(v.number()),
   })
     .index("by_clerk_org_id", ["clerkOrgId"])
-    .index("by_slug", ["slug"]),
+    .index("by_slug", ["slug"])
+    .index("by_google_watch_channel", ["googleWatchChannelId"]),
 
   floors: defineTable({
     organizationId: v.id("organizations"),
@@ -66,6 +75,8 @@ export default defineSchema({
       v.literal("auto_released")
     ),
     googleCalendarEventId: v.optional(v.string()),
+    source: v.optional(v.union(v.literal("holdspace"), v.literal("google"))),
+    lastSyncedAt: v.optional(v.number()),
     notes: v.optional(v.string()),
   })
     .index("by_organization", ["organizationId"])
@@ -79,9 +90,9 @@ export default defineSchema({
     clerkUserId: v.string(),
     email: v.string(),
     name: v.string(),
-    role: v.union(v.literal("therapist"), v.literal("admin")),
-    googleCalendarConnected: v.boolean(),
-    googleRefreshToken: v.optional(v.string()),
+    role: v.union(v.literal("member"), v.literal("admin")),
+    // Legacy — Google connection is org-level; stripped on upsert.
+    googleCalendarConnected: v.optional(v.boolean()),
   })
     .index("by_clerk_user_id", ["clerkUserId"])
     .index("by_organization", ["organizationId"])

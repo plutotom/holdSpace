@@ -1,5 +1,7 @@
 import { mutation, query } from "../_generated/server";
 import { v } from "convex/values";
+import { internal } from "../_generated/api";
+import { requireCanFreeReservation } from "../lib/auth";
 
 export const getSchedule = query({
   args: {
@@ -79,10 +81,17 @@ export const create = mutation({
 
     if (conflict) throw new Error("Room is already reserved during this time");
 
-    return await ctx.db.insert("reservations", {
+    const reservationId = await ctx.db.insert("reservations", {
       ...args,
       status: "confirmed",
+      source: "holdspace",
     });
+
+    await ctx.scheduler.runAfter(0, internal.routes.google.syncReservationToGoogle, {
+      reservationId,
+    });
+
+    return reservationId;
   },
 });
 
@@ -112,7 +121,7 @@ export const claimAdHoc = mutation({
 
     if (conflict) throw new Error("Room is already in use");
 
-    return await ctx.db.insert("reservations", {
+    const reservationId = await ctx.db.insert("reservations", {
       organizationId,
       roomId,
       userId,
@@ -120,14 +129,58 @@ export const claimAdHoc = mutation({
       endTime,
       isAdHoc: true,
       status: "in_progress",
+      source: "holdspace",
     });
+
+    await ctx.scheduler.runAfter(0, internal.routes.google.syncReservationToGoogle, {
+      reservationId,
+    });
+
+    return reservationId;
   },
 });
 
 export const cancel = mutation({
   args: { reservationId: v.id("reservations") },
   handler: async (ctx, { reservationId }) => {
+    const reservation = await ctx.db.get(reservationId);
+    if (!reservation) throw new Error("Reservation not found");
+
     await ctx.db.patch(reservationId, { status: "canceled" });
+
+    if (reservation.source !== "google") {
+      await ctx.scheduler.runAfter(0, internal.routes.google.deleteReservationFromGoogle, {
+        reservationId,
+      });
+    }
+  },
+});
+
+export const freeRoom = mutation({
+  args: {
+    reservationId: v.id("reservations"),
+    actingUserId: v.id("users"),
+  },
+  handler: async (ctx, { reservationId, actingUserId }) => {
+    const reservation = await ctx.db.get(reservationId);
+    if (!reservation) throw new Error("Reservation not found");
+
+    await requireCanFreeReservation(ctx, reservation, actingUserId);
+
+    if (
+      reservation.status !== "confirmed" &&
+      reservation.status !== "in_progress"
+    ) {
+      throw new Error("Only active reservations can be freed");
+    }
+
+    await ctx.db.patch(reservationId, { status: "canceled" });
+
+    if (reservation.source !== "google") {
+      await ctx.scheduler.runAfter(0, internal.routes.google.deleteReservationFromGoogle, {
+        reservationId,
+      });
+    }
   },
 });
 

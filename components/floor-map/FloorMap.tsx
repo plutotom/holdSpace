@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { RoomCard } from "./RoomCard";
 import { RoomDetailPanel } from "./RoomDetailPanel";
